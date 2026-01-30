@@ -31,7 +31,27 @@ if (navigator.geolocation) {
       }).addTo(map);
 
       // 3) Add a marker on current location
-      L.marker(coords).addTo(map).bindPopup("You are here 📍").openPopup();
+      //   L.marker(coords).addTo(map).bindPopup("You are here 📍").openPopup();
+
+      // Click on map - marker
+
+      map.on("click", function (mapEvent) {
+        const { lat, lng } = mapEvent.latlng;
+
+        L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup(
+            L.popup({
+              maxwidth: 250,
+              minWidth: 100,
+              autoClose: false,
+              closeOnClick: false,
+              className: `running-popup`,
+            })
+          )
+          .setPopupContent(`Workout`)
+          .openPopup();
+      });
     },
     function () {
       alert("Could not get your position");
