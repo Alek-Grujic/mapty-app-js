@@ -18,6 +18,20 @@ if (navigator.geolocation) {
       const { latitude } = position.coords;
       const { longitude } = position.coords;
       console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
+
+      const coords = [latitude, longitude];
+
+      // 1) Create map and set view
+      const map = L.map("map").setView(coords, 13);
+
+      // 2) Add tile layer (map "skin")
+      L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      // 3) Add a marker on current location
+      L.marker(coords).addTo(map).bindPopup("You are here 📍").openPopup();
     },
     function () {
       alert("Could not get your position");
