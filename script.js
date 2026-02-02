@@ -41,6 +41,7 @@ class App {
       );
     }
   }
+
   _loadMap(position) {
     console.log(position);
     const { latitude } = position.coords;
@@ -76,6 +77,66 @@ class App {
 
   _newWorkout(e) {
     e.preventDefault();
+
+    // helpers
+    const validInputs = (...inputs) =>
+      inputs.every((inp) => Number.isFinite(inp));
+
+    const allPositive = (...inputs) => inputs.every((inp) => inp > 0);
+
+    const hasValue = (...fields) =>
+      fields.every((inp) => inp.value.trim() !== "");
+
+    // get data from form
+    const type = inputType.value;
+    const distance = +inputDistance.value;
+    const duration = +inputDuration.value;
+
+    // check if data is valid
+
+    // if workout running, create running object
+    if (type === "running") {
+      const cadence = +inputCadence.value;
+      if (
+        type === "running" &&
+        !hasValue(inputDistance, inputDuration, inputCadence)
+      ) {
+        return alert("Please fill in all required fields!");
+      }
+      if (
+        // !Number.isFinite(distance) ||
+        // !Number.isFinite(duration) ||
+        // !Number.isFinite(cadence)
+
+        !validInputs(distance, duration, cadence) ||
+        !allPositive(distance, duration, cadence)
+      )
+        return alert("Inputs have to be positive numbers!");
+    }
+
+    // if workout cycling, create cycling object
+    if (type === "cycling") {
+      const elevation = +inputElevation.value;
+      if (
+        type === "cycling" &&
+        !hasValue(inputDistance, inputDuration, inputElevation)
+      ) {
+        return alert("Please fill in all required fields!");
+      }
+      if (
+        // !Number.isFinite(distance) ||
+        // !Number.isFinite(duration) ||
+        // !Number.isFinite(elevation)
+
+        !validInputs(distance, duration, elevation) ||
+        !allPositive(distance, duration)
+      )
+        return alert("Inputs have to be positive numbers!");
+    }
+
+    // add new object to workout array
+
+    // render workout on map as marker
 
     // clear input fields
 
