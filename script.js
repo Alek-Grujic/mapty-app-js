@@ -39,12 +39,49 @@ class Workout {
   }
 }
 
+// running class
+class Running extends Workout {
+  type = "running";
+  constructor(coords, distance, duration, cadence) {
+    super(coords, distance, duration);
+    this.cadence = cadence;
+    this.calcPace();
+    this._setDescription();
+  }
+
+  calcPace() {
+    // min/km
+    this.pace = this.duration / this.distance;
+    return this.pace;
+  }
+}
+
+// cycling class
+class Cycling extends Workout {
+  type = "cycling";
+  constructor(coords, distance, duration, elevationGain) {
+    super(coords, distance, duration);
+    this.elevationGain = elevationGain;
+    this.CalcSpeed();
+    this._setDescription();
+  }
+
+  CalcSpeed() {
+    // km/h
+    this.speed = this.distance / (this.duration / 60);
+    return this.speed;
+  }
+}
+
 class App {
   #map;
   #mapEvent;
   #workouts = [];
 
   constructor() {
+    // get data from localStorge
+    this._getLocalStorage();
+
     this._getPosition();
     form.addEventListener("submit", this._newWorkout.bind(this));
     inputType.addEventListener("change", this._toggleElevationField);
@@ -82,6 +119,9 @@ class App {
     // Click on map - marker
 
     this.#map.on("click", this._showForm.bind(this));
+
+    // render markers for stored workouts (after map exists)
+    this.#workouts.forEach((work) => this.renderWorkoutMarker(work));
   }
 
   _showForm(mapE) {
@@ -169,6 +209,8 @@ class App {
     // add new object to workout array
     this.#workouts.push(workout);
 
+    this._setLocalStorage();
+
     // render workout on map as marker
     this.renderWorkoutMarker(workout);
 
@@ -177,6 +219,8 @@ class App {
 
     // clear input fields
     this._hideForm();
+
+    this._setLocalStorage();
   }
 
   renderWorkoutMarker(workout) {
@@ -264,40 +308,27 @@ class App {
       pan: { duration: 1 },
     });
   }
+
+  _setLocalStorage() {
+    localStorage.setItem("workouts", JSON.stringify(this.#workouts));
+  }
+
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem("workouts"));
+    console.log(data);
+
+    if (!data) return;
+
+    this.#workouts = data;
+
+    // render list items
+    this.#workouts.forEach((work) => this._renderWorkout(work));
+  }
+
+  reset() {
+    localStorage.removeItem("workouts");
+    location.reload();
+  }
 }
 
 const app = new App();
-
-// running class
-class Running extends Workout {
-  type = "running";
-  constructor(coords, distance, duration, cadence) {
-    super(coords, distance, duration);
-    this.cadence = cadence;
-    this.calcPace();
-    this._setDescription();
-  }
-
-  calcPace() {
-    // min/km
-    this.pace = this.duration / this.distance;
-    return this.pace;
-  }
-}
-
-// cycling class
-class Cycling extends Workout {
-  type = "cycling";
-  constructor(coords, distance, duration, elevationGain) {
-    super(coords, distance, duration);
-    this.elevationGain = elevationGain;
-    this.CalcSpeed();
-    this._setDescription();
-  }
-
-  CalcSpeed() {
-    // km/h
-    this.speed = this.distance / (this.duration / 60);
-    return this.speed;
-  }
-}
