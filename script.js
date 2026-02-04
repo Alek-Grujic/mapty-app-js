@@ -136,9 +136,9 @@ class App {
       inputCadence.value =
       inputElevation.value =
         "";
-    form.computedStyleMap.display = "none";
+    form.style.display = "none";
     form.classList.add("hidden");
-    setTimeout(() => (form.style.disply = "grid"), 1000);
+    setTimeout(() => (form.style.display = "grid"), 1000);
   }
 
   _toggleElevationField() {
@@ -185,6 +185,7 @@ class App {
       }
 
       workout = new Running([lat, lng], distance, duration, cadence);
+      console.log(workout);
     }
 
     // if workout cycling, create cycling object
@@ -273,9 +274,10 @@ class App {
         </li>
 
         `;
+    }
 
-      if (workout.type === "cycling") {
-        html += `
+    if (workout.type === "cycling") {
+      html += `
                       <div class="workout__details">
             <span class="workout__icon">⚡️</span>
             <span class="workout__value">${workout.speed.toFixed(1)}</span>
@@ -288,7 +290,6 @@ class App {
           </div>
         </li>
             `;
-      }
     }
     form.insertAdjacentHTML("afterend", html);
   }
@@ -303,7 +304,7 @@ class App {
 
     if (!workout) return;
 
-    this.#map.setView(workout.coords, 14, {
+    this.#map.setView(workout.coords, 13, {
       animate: true,
       pan: { duration: 1 },
     });
@@ -315,7 +316,6 @@ class App {
 
   _getLocalStorage() {
     const data = JSON.parse(localStorage.getItem("workouts"));
-    console.log(data);
 
     if (!data) return;
 
