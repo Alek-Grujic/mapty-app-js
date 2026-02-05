@@ -77,6 +77,8 @@ class App {
   #map;
   #mapEvent;
   #workouts = [];
+  #editingId = null;
+  #markers = new Map();
 
   constructor() {
     // get data from localStorge
@@ -86,6 +88,7 @@ class App {
     form.addEventListener("submit", this._newWorkout.bind(this));
     inputType.addEventListener("change", this._toggleElevationField);
     containerWorkouts.addEventListener("click", this._moveToPopup.bind(this));
+    containerWorkouts.addEventListener("click", this._startEdit.bind(this));
   }
 
   _getPosition() {
@@ -162,70 +165,143 @@ class App {
     const type = inputType.value;
     const distance = +inputDistance.value;
     const duration = +inputDuration.value;
-    const { lat, lng } = this.#mapEvent.latlng;
-    let workout;
 
-    // check if data is valid
-
-    // if workout running, create running object
+    // =====================
+    // VALIDATION
+    // =====================
     if (type === "running") {
       const cadence = +inputCadence.value;
-      if (!hasValue(inputDistance, inputDuration, inputCadence)) {
-        return alert("Please fill in all required fields!");
-      }
-      if (
-        // !Number.isFinite(distance) ||
-        // !Number.isFinite(duration) ||
-        // !Number.isFinite(cadence)
 
+      if (!hasValue(inputDistance, inputDuration, inputCadence))
+        return alert("Please fill in all required fields!");
+
+      if (
         !validInputs(distance, duration, cadence) ||
         !allPositive(distance, duration, cadence)
-      ) {
+      )
         return alert("Inputs have to be positive numbers!");
-      }
-
-      workout = new Running([lat, lng], distance, duration, cadence);
-      console.log(workout);
     }
 
-    // if workout cycling, create cycling object
     if (type === "cycling") {
       const elevation = +inputElevation.value;
-      if (!hasValue(inputDistance, inputDuration, inputElevation)) {
-        return alert("Please fill in all required fields!");
-      }
-      if (
-        // !Number.isFinite(distance) ||
-        // !Number.isFinite(duration) ||
-        // !Number.isFinite(elevation)
 
+      if (!hasValue(inputDistance, inputDuration, inputElevation))
+        return alert("Please fill in all required fields!");
+
+      if (
         !validInputs(distance, duration, elevation) ||
         !allPositive(distance, duration)
-      ) {
+      )
         return alert("Inputs have to be positive numbers!");
-      }
-      workout = new Cycling([lat, lng], distance, duration, elevation);
     }
 
-    // add new object to workout array
-    this.#workouts.push(workout);
+    // =====================
+    // CREATE vs EDIT
+    // =====================
+    if (this.#editingId) {
+      this._updateWorkout(type, distance, duration);
+    } else {
+      this._createWorkout(type, distance, duration);
+    }
 
-    this._setLocalStorage();
-
-    // render workout on map as marker
-    this.renderWorkoutMarker(workout);
-
-    // render workout on sidebar
-    this._renderWorkout(workout);
-
-    // clear input fields
-    this._hideForm();
-
+    // reset UI + state
+    this._hideFormAndClear();
     this._setLocalStorage();
   }
 
+  //   _newWorkout(e) {
+  //     e.preventDefault();
+
+  //     // helpers
+  //     const validInputs = (...inputs) =>
+  //       inputs.every((inp) => Number.isFinite(inp));
+
+  //     const allPositive = (...inputs) => inputs.every((inp) => inp > 0);
+
+  //     const hasValue = (...fields) =>
+  //       fields.every((inp) => inp.value.trim() !== "");
+
+  //     // get data from form
+  //     const type = inputType.value;
+  //     const distance = +inputDistance.value;
+  //     const duration = +inputDuration.value;
+  //     const { lat, lng } = this.#mapEvent.latlng;
+  //     let workout;
+
+  //     // check if data is valid
+
+  //     // if workout running, create running object
+  //     if (type === "running") {
+  //       const cadence = +inputCadence.value;
+  //       if (!hasValue(inputDistance, inputDuration, inputCadence)) {
+  //         return alert("Please fill in all required fields!");
+  //       }
+  //       if (
+  //         // !Number.isFinite(distance) ||
+  //         // !Number.isFinite(duration) ||
+  //         // !Number.isFinite(cadence)
+
+  //         !validInputs(distance, duration, cadence) ||
+  //         !allPositive(distance, duration, cadence)
+  //       ) {
+  //         return alert("Inputs have to be positive numbers!");
+  //       }
+
+  //       workout = new Running([lat, lng], distance, duration, cadence);
+  //       console.log(workout);
+  //     }
+
+  //     // if workout cycling, create cycling object
+  //     if (type === "cycling") {
+  //       const elevation = +inputElevation.value;
+  //       if (!hasValue(inputDistance, inputDuration, inputElevation)) {
+  //         return alert("Please fill in all required fields!");
+  //       }
+  //       if (
+  //         // !Number.isFinite(distance) ||
+  //         // !Number.isFinite(duration) ||
+  //         // !Number.isFinite(elevation)
+
+  //         !validInputs(distance, duration, elevation) ||
+  //         !allPositive(distance, duration)
+  //       ) {
+  //         return alert("Inputs have to be positive numbers!");
+  //       }
+  //       workout = new Cycling([lat, lng], distance, duration, elevation);
+  //     }
+
+  //     if (this.#editingId) {
+  //       this._updateWorkout(type, distance, duration);
+  //     } else {
+  //       this._createWorkout(type, distance, duration);
+  //     }
+
+  //     this._hideFormAndClear();
+
+  //     // add new object to workout array
+  //     this.#workouts.push(workout);
+
+  //     this._setLocalStorage();
+
+  //     // render workout on map as marker
+  //     this.renderWorkoutMarker(workout);
+
+  //     // render workout on sidebar
+  //     this._renderWorkout(workout);
+
+  //     // clear input fields
+  //     this._hideForm();
+
+  //     // this._setLocalStorage();
+  //   }
+
   renderWorkoutMarker(workout) {
-    L.marker(workout.coords)
+    // Remove existing marker for this workout (useful for edits)
+    const existing = this.#markers.get(workout.id);
+    if (existing) this.#map.removeLayer(existing);
+
+    // Create and store marker
+    const marker = L.marker(workout.coords)
       .addTo(this.#map)
       .bindPopup(
         L.popup({
@@ -240,7 +316,31 @@ class App {
         `${workout.type === "running" ? "🏃‍" : "🚴‍"} ${workout.description}`
       )
       .openPopup();
+
+    this.#markers.set(workout.id, marker);
   }
+  //   renderWorkoutMarker(workout) {
+  //     const existing = this.#markers.get(workout.id);
+  //     if (existing) this.#map.removeLayer(existing);
+
+  //     L.marker(workout.coords)
+  //       .addTo(this.#map)
+  //       .bindPopup(
+  //         L.popup({
+  //           maxWidth: 250,
+  //           minWidth: 100,
+  //           autoClose: false,
+  //           closeOnClick: false,
+  //           className: `${workout.type}-popup`,
+  //         })
+  //       )
+  //       .setPopupContent(
+  //         `${workout.type === "running" ? "🏃‍" : "🚴‍"} ${workout.description}`
+  //       )
+  //       .openPopup();
+
+  //     this.#markers.set(workout.id, marker);
+  //   }
 
   _renderWorkout(workout) {
     let html = `
@@ -328,6 +428,150 @@ class App {
   reset() {
     localStorage.removeItem("workouts");
     location.reload();
+  }
+
+  _startEdit(e) {
+    const workoutEl = e.target.closest(".workout");
+    if (!workoutEl) return;
+
+    const workout = this.#workouts.find((w) => w.id === workoutEl.dataset.id);
+    if (!workout) return;
+
+    // set edit mode
+    this.#editingId = workout.id;
+
+    // show form
+    form.classList.remove("hidden");
+
+    // set type + toggle fields if needed
+    inputType.value = workout.type;
+    this._toggleElevationFieldForType(workout.type);
+
+    // prefill common fields
+    inputDistance.value = workout.distance;
+    inputDuration.value = workout.duration;
+
+    // prefill type-specific
+    if (workout.type === "running") {
+      inputCadence.value = workout.cadence;
+      inputElevation.value = "";
+    } else {
+      inputElevation.value = workout.elevationGain;
+      inputCadence.value = "";
+    }
+
+    inputDistance.focus();
+  }
+
+  _toggleElevationFieldForType(type) {
+    const cadenceRow = inputCadence.closest(".form__row");
+    const elevRow = inputElevation.closest(".form__row");
+
+    if (type === "running") {
+      cadenceRow.classList.remove("form__row--hidden");
+      elevRow.classList.add("form__row--hidden");
+    }
+    if (type === "cycling") {
+      elevRow.classList.remove("form__row--hidden");
+      cadenceRow.classList.add("form__row--hidden");
+    }
+  }
+
+  //   _createWorkout(type, distance, duration) {
+  //     const { lat, lng } = this.#mapEvent.latlng;
+  //     let workout;
+
+  //     if (type === "running") {
+  //       const cadence = +inputCadence.value;
+  //       workout = new Running([lat, lng], distance, duration, cadence);
+  //     }
+
+  //     if (type === "cycling") {
+  //       const elevation = +inputElevation.value;
+  //       workout = new Cycling([lat, lng], distance, duration, elevation);
+  //     }
+
+  //     this.#workouts.push(workout);
+  //     this.renderWorkoutMarker(workout);
+  //     this._renderWorkout(workout);
+  //   }
+  _createWorkout(type, distance, duration) {
+    // ⛔ samo create koristi map click
+    if (!this.#mapEvent) return;
+
+    const { lat, lng } = this.#mapEvent.latlng;
+    let workout;
+
+    if (type === "running") {
+      const cadence = +inputCadence.value;
+      workout = new Running([lat, lng], distance, duration, cadence);
+    }
+
+    if (type === "cycling") {
+      const elevation = +inputElevation.value;
+      workout = new Cycling([lat, lng], distance, duration, elevation);
+    }
+
+    // store
+    this.#workouts.push(workout);
+
+    // render
+    this.renderWorkoutMarker(workout);
+    this._renderWorkout(workout);
+
+    // reset map click (optional but clean)
+    this.#mapEvent = null;
+  }
+
+  _updateWorkout(type, distance, duration) {
+    const workout = this.#workouts.find((w) => w.id === this.#editingId);
+    if (!workout) return;
+
+    // update common fields
+    workout.type = type; // ako dozvoljavaš promjenu type-a
+    workout.distance = distance;
+    workout.duration = duration;
+
+    // update type-specific + recalc
+    if (type === "running") {
+      workout.cadence = +inputCadence.value;
+      workout.pace = workout.duration / workout.distance;
+      delete workout.elevationGain;
+      delete workout.speed;
+    }
+
+    if (type === "cycling") {
+      workout.elevationGain = +inputElevation.value;
+      workout.speed = workout.distance / (workout.duration / 60);
+      delete workout.cadence;
+      delete workout.pace;
+    }
+
+    // update marker (coords ostaju iste u edit verziji)
+    this.renderWorkoutMarker(workout);
+
+    // update sidebar: najlakše je rerender cijelu listu (za sada)
+    this._rerenderWorkoutsList();
+
+    // exit edit mode
+    this.#editingId = null;
+  }
+
+  _rerenderWorkoutsList() {
+    // obriši sve li osim forme (forma je u listi)
+    const items = containerWorkouts.querySelectorAll(".workout");
+    items.forEach((el) => el.remove());
+
+    this.#workouts.forEach((w) => this._renderWorkout(w));
+  }
+
+  _hideFormAndClear() {
+    form.classList.add("hidden");
+    inputDistance.value =
+      inputDuration.value =
+      inputCadence.value =
+      inputElevation.value =
+        "";
   }
 }
 
