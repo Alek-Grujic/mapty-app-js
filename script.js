@@ -93,6 +93,7 @@ class App {
       "click",
       this._handleWorkoutClick.bind(this)
     );
+    document.addEventListener("keydown", this._cancelEdit.bind(this));
   }
 
   _getPosition() {
@@ -348,7 +349,7 @@ class App {
 
   _renderWorkout(workout) {
     let html = `
-        <li class="workout workout--${workout.type}" data-id="${workout.id}">
+        <li class="workout workout--${workout.type} " data-id="${workout.id}">
             <div class='workout__header'>
                 <h2 class="workout__title">${workout.description}</h2>
                 <div class='buttons'>
@@ -441,11 +442,25 @@ class App {
   }
 
   _startEdit(e) {
+    if (!e.target.closest(".workout__edit")) return;
+
     const workoutEl = e.target.closest(".workout");
     if (!workoutEl) return;
 
     const workout = this.#workouts.find((w) => w.id === workoutEl.dataset.id);
     if (!workout) return;
+
+    containerWorkouts.querySelectorAll(".workout").forEach((el) => {
+      el.classList.remove(
+        "workout--editing-running",
+        "workout--editing-cycling"
+      );
+    });
+    workoutEl.classList.add(
+      workout.type === "running"
+        ? "workout--editing-running"
+        : "workout--editing-cycling"
+    );
 
     // set edit mode
     this.#editingId = workout.id;
@@ -582,16 +597,38 @@ class App {
       inputCadence.value =
       inputElevation.value =
         "";
-  }
 
+    containerWorkouts
+      .querySelectorAll(".workout")
+      .forEach((el) =>
+        el.classList.remove(
+          "workout--editing-running",
+          "workout--editing-cycling"
+        )
+      );
+  }
   _handleWorkoutClick(e) {
     if (e.target.closest(".workout__edit")) {
       this._startEdit(e);
+      return;
     }
 
-    if (!e.target.closest(".workout__edit") && e.target.closest(".workout")) {
+    if (this.#editingId) return;
+
+    if (e.target.closest(".workout")) {
       this._moveToPopup(e);
     }
+  }
+
+  _cancelEdit(e) {
+    if (e.key !== "Escape") return;
+    if (!this.#editingId) return;
+
+    // exit edit mode
+    this.#editingId = null;
+
+    // hide form + clear inputs + remove highlight
+    this._hideFormAndClear();
   }
 }
 

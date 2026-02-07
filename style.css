@@ -152,6 +152,18 @@ a:visited {
   transform: translateY(0);
 }
 
+.workout--editing-running {
+  outline: 2px solid var(--color-brand--2); /* green */
+  outline-offset: 2px;
+  box-shadow: 0 0.8rem 2rem rgba(0, 196, 106, 0.35);
+}
+
+.workout--editing-cycling {
+  outline: 2px solid var(--color-brand--1); /* orange */
+  outline-offset: 2px;
+  box-shadow: 0 0.8rem 2rem rgba(255, 181, 69, 0.35);
+}
+
 .form {
   background-color: var(--color-dark--2);
   border-radius: 5px;
