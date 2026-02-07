@@ -87,8 +87,12 @@ class App {
     this._getPosition();
     form.addEventListener("submit", this._newWorkout.bind(this));
     inputType.addEventListener("change", this._toggleElevationField);
-    containerWorkouts.addEventListener("click", this._moveToPopup.bind(this));
-    containerWorkouts.addEventListener("click", this._startEdit.bind(this));
+    // containerWorkouts.addEventListener("click", this._moveToPopup.bind(this));
+    // containerWorkouts.addEventListener("click", this._startEdit.bind(this));
+    containerWorkouts.addEventListener(
+      "click",
+      this._handleWorkoutClick.bind(this)
+    );
   }
 
   _getPosition() {
@@ -578,6 +582,16 @@ class App {
       inputCadence.value =
       inputElevation.value =
         "";
+  }
+
+  _handleWorkoutClick(e) {
+    if (e.target.closest(".workout__edit")) {
+      this._startEdit(e);
+    }
+
+    if (!e.target.closest(".workout__edit") && e.target.closest(".workout")) {
+      this._moveToPopup(e);
+    }
   }
 }
 
