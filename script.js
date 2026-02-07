@@ -344,8 +344,14 @@ class App {
 
   _renderWorkout(workout) {
     let html = `
-    <li class="workout workout--${workout.type}" data-id="${workout.id}">
-          <h2 class="workout__title">${workout.description}</h2>
+        <li class="workout workout--${workout.type}" data-id="${workout.id}">
+            <div class='workout__header'>
+                <h2 class="workout__title">${workout.description}</h2>
+                <div class='buttons'>
+                 <button class="workout__edit">🖊 Edit</button>
+                 <button class="workout__delete">❌ Delete</button>
+                 </div>
+            </div>
           <div class="workout__details">
             <span class="workout__icon">${
               workout.type === "running" ? "🏃‍" : "🚴‍"
@@ -477,24 +483,6 @@ class App {
     }
   }
 
-  //   _createWorkout(type, distance, duration) {
-  //     const { lat, lng } = this.#mapEvent.latlng;
-  //     let workout;
-
-  //     if (type === "running") {
-  //       const cadence = +inputCadence.value;
-  //       workout = new Running([lat, lng], distance, duration, cadence);
-  //     }
-
-  //     if (type === "cycling") {
-  //       const elevation = +inputElevation.value;
-  //       workout = new Cycling([lat, lng], distance, duration, elevation);
-  //     }
-
-  //     this.#workouts.push(workout);
-  //     this.renderWorkoutMarker(workout);
-  //     this._renderWorkout(workout);
-  //   }
   _createWorkout(type, distance, duration) {
     // ⛔ samo create koristi map click
     if (!this.#mapEvent) return;
@@ -522,6 +510,24 @@ class App {
     // reset map click (optional but clean)
     this.#mapEvent = null;
   }
+  //   _createWorkout(type, distance, duration) {
+  //     const { lat, lng } = this.#mapEvent.latlng;
+  //     let workout;
+
+  //     if (type === "running") {
+  //       const cadence = +inputCadence.value;
+  //       workout = new Running([lat, lng], distance, duration, cadence);
+  //     }
+
+  //     if (type === "cycling") {
+  //       const elevation = +inputElevation.value;
+  //       workout = new Cycling([lat, lng], distance, duration, elevation);
+  //     }
+
+  //     this.#workouts.push(workout);
+  //     this.renderWorkoutMarker(workout);
+  //     this._renderWorkout(workout);
+  //   }
 
   _updateWorkout(type, distance, duration) {
     const workout = this.#workouts.find((w) => w.id === this.#editingId);

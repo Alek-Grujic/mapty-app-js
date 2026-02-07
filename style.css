@@ -75,7 +75,7 @@ a:visited {
 
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 0.75rem 1.5rem;
+  gap: 2.75rem 1.5rem;
 }
 .workout--running {
   border-left: 5px solid var(--color-brand--2);
@@ -111,6 +111,31 @@ a:visited {
   color: var(--color-light--1);
   text-transform: uppercase;
   font-weight: 800;
+}
+
+.workout__edit,
+.workout__delete {
+  font-size: 1.1rem;
+  border: 1px solid var(--color-light--2);
+  border-radius: 5px;
+  background-color: #2d3439;
+  color: var(--color-light--2);
+  width: 50px;
+  padding: 4px 5px;
+  cursor: pointer;
+  /* display: none; */
+}
+
+.workout__delete {
+  width: 65px;
+  margin: 0 0 0 5px;
+}
+
+.workout__header {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .form {
