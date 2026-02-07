@@ -138,6 +138,20 @@ a:visited {
   align-items: center;
 }
 
+.buttons {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.workout:hover .buttons,
+.workout:focus-within .buttons {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
 .form {
   background-color: var(--color-dark--2);
   border-radius: 5px;
