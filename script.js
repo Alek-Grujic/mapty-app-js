@@ -10,6 +10,7 @@ const inputElevation = document.querySelector(".form__input--elevation");
 
 const btnDeleteAll = document.querySelector(".options__delete-all");
 const btnSort = document.querySelector(".options__sort");
+const btnShowAll = document.querySelector(".options__show-all");
 
 class Workout {
   date = new Date();
@@ -101,6 +102,7 @@ class App {
     document.addEventListener("keydown", this._cancelEdit.bind(this));
     btnDeleteAll.addEventListener("click", this._deleteAllWorkouts.bind(this));
     btnSort.addEventListener("click", this._sortWorkouts.bind(this));
+    btnShowAll.addEventListener("click", this._showAllWorkouts.bind(this));
   }
 
   _getPosition() {
@@ -137,6 +139,8 @@ class App {
 
     // render markers for stored workouts (after map exists)
     this.#workouts.forEach((work) => this.renderWorkoutMarker(work));
+
+    this._showAllWorkouts();
   }
 
   _showForm(mapE) {
@@ -593,6 +597,17 @@ class App {
     workout._setDescription();
 
     return workout;
+  }
+
+  _showAllWorkouts() {
+    if (!this.#workouts.length) return;
+
+    const bounds = L.latLngBounds(this.#workouts.map((w) => w.coords));
+
+    this.#map.fitBounds(bounds, {
+      padding: [50, 50],
+      animate: true,
+    });
   }
 }
 
