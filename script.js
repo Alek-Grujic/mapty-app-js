@@ -214,92 +214,6 @@ class App {
     this._setLocalStorage();
   }
 
-  //   _newWorkout(e) {
-  //     e.preventDefault();
-
-  //     // helpers
-  //     const validInputs = (...inputs) =>
-  //       inputs.every((inp) => Number.isFinite(inp));
-
-  //     const allPositive = (...inputs) => inputs.every((inp) => inp > 0);
-
-  //     const hasValue = (...fields) =>
-  //       fields.every((inp) => inp.value.trim() !== "");
-
-  //     // get data from form
-  //     const type = inputType.value;
-  //     const distance = +inputDistance.value;
-  //     const duration = +inputDuration.value;
-  //     const { lat, lng } = this.#mapEvent.latlng;
-  //     let workout;
-
-  //     // check if data is valid
-
-  //     // if workout running, create running object
-  //     if (type === "running") {
-  //       const cadence = +inputCadence.value;
-  //       if (!hasValue(inputDistance, inputDuration, inputCadence)) {
-  //         return alert("Please fill in all required fields!");
-  //       }
-  //       if (
-  //         // !Number.isFinite(distance) ||
-  //         // !Number.isFinite(duration) ||
-  //         // !Number.isFinite(cadence)
-
-  //         !validInputs(distance, duration, cadence) ||
-  //         !allPositive(distance, duration, cadence)
-  //       ) {
-  //         return alert("Inputs have to be positive numbers!");
-  //       }
-
-  //       workout = new Running([lat, lng], distance, duration, cadence);
-  //       console.log(workout);
-  //     }
-
-  //     // if workout cycling, create cycling object
-  //     if (type === "cycling") {
-  //       const elevation = +inputElevation.value;
-  //       if (!hasValue(inputDistance, inputDuration, inputElevation)) {
-  //         return alert("Please fill in all required fields!");
-  //       }
-  //       if (
-  //         // !Number.isFinite(distance) ||
-  //         // !Number.isFinite(duration) ||
-  //         // !Number.isFinite(elevation)
-
-  //         !validInputs(distance, duration, elevation) ||
-  //         !allPositive(distance, duration)
-  //       ) {
-  //         return alert("Inputs have to be positive numbers!");
-  //       }
-  //       workout = new Cycling([lat, lng], distance, duration, elevation);
-  //     }
-
-  //     if (this.#editingId) {
-  //       this._updateWorkout(type, distance, duration);
-  //     } else {
-  //       this._createWorkout(type, distance, duration);
-  //     }
-
-  //     this._hideFormAndClear();
-
-  //     // add new object to workout array
-  //     this.#workouts.push(workout);
-
-  //     this._setLocalStorage();
-
-  //     // render workout on map as marker
-  //     this.renderWorkoutMarker(workout);
-
-  //     // render workout on sidebar
-  //     this._renderWorkout(workout);
-
-  //     // clear input fields
-  //     this._hideForm();
-
-  //     // this._setLocalStorage();
-  //   }
-
   renderWorkoutMarker(workout) {
     // Remove existing marker for this workout (useful for edits)
     const existing = this.#markers.get(workout.id);
@@ -324,28 +238,6 @@ class App {
 
     this.#markers.set(workout.id, marker);
   }
-  //   renderWorkoutMarker(workout) {
-  //     const existing = this.#markers.get(workout.id);
-  //     if (existing) this.#map.removeLayer(existing);
-
-  //     L.marker(workout.coords)
-  //       .addTo(this.#map)
-  //       .bindPopup(
-  //         L.popup({
-  //           maxWidth: 250,
-  //           minWidth: 100,
-  //           autoClose: false,
-  //           closeOnClick: false,
-  //           className: `${workout.type}-popup`,
-  //         })
-  //       )
-  //       .setPopupContent(
-  //         `${workout.type === "running" ? "🏃‍" : "🚴‍"} ${workout.description}`
-  //       )
-  //       .openPopup();
-
-  //     this.#markers.set(workout.id, marker);
-  //   }
 
   _renderWorkout(workout) {
     let html = `
@@ -529,24 +421,6 @@ class App {
     // reset map click (optional but clean)
     this.#mapEvent = null;
   }
-  //   _createWorkout(type, distance, duration) {
-  //     const { lat, lng } = this.#mapEvent.latlng;
-  //     let workout;
-
-  //     if (type === "running") {
-  //       const cadence = +inputCadence.value;
-  //       workout = new Running([lat, lng], distance, duration, cadence);
-  //     }
-
-  //     if (type === "cycling") {
-  //       const elevation = +inputElevation.value;
-  //       workout = new Cycling([lat, lng], distance, duration, elevation);
-  //     }
-
-  //     this.#workouts.push(workout);
-  //     this.renderWorkoutMarker(workout);
-  //     this._renderWorkout(workout);
-  //   }
 
   _updateWorkout(type, distance, duration) {
     const workout = this.#workouts.find((w) => w.id === this.#editingId);
@@ -607,7 +481,13 @@ class App {
         )
       );
   }
+
   _handleWorkoutClick(e) {
+    if (e.target.closest(".workout__delete")) {
+      this._deleteWorkout(e);
+      return;
+    }
+
     if (e.target.closest(".workout__edit")) {
       this._startEdit(e);
       return;
@@ -629,6 +509,36 @@ class App {
 
     // hide form + clear inputs + remove highlight
     this._hideFormAndClear();
+  }
+
+  _deleteWorkout(e) {
+    if (!confirm("Delete this workout?")) return;
+    const workoutEl = e.target.closest(".workout");
+    if (!workoutEl) return;
+
+    const id = workoutEl.dataset.id;
+
+    // ako brišemo workout koji je u edit modu → cancel edit
+    if (this.#editingId === id) {
+      this.#editingId = null;
+      this._hideFormAndClear();
+    }
+
+    // 1) ukloni iz niza
+    this.#workouts = this.#workouts.filter((w) => w.id !== id);
+
+    // 2) ukloni marker sa mape
+    const marker = this.#markers.get(id);
+    if (marker) {
+      this.#map.removeLayer(marker);
+      this.#markers.delete(id);
+    }
+
+    // 3) ukloni element iz DOM-a
+    workoutEl.remove();
+
+    // 4) update localStorage
+    this._setLocalStorage();
   }
 }
 
