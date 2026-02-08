@@ -8,6 +8,8 @@ const inputDuration = document.querySelector(".form__input--duration");
 const inputCadence = document.querySelector(".form__input--cadence");
 const inputElevation = document.querySelector(".form__input--elevation");
 
+const btnDeleteAll = document.querySelector(".options__delete-all");
+
 class Workout {
   date = new Date();
   id = (Date.now() + "").slice(-10);
@@ -94,6 +96,7 @@ class App {
       this._handleWorkoutClick.bind(this)
     );
     document.addEventListener("keydown", this._cancelEdit.bind(this));
+    btnDeleteAll.addEventListener("click", this._deleteAllWorkouts.bind(this));
   }
 
   _getPosition() {
@@ -539,6 +542,13 @@ class App {
 
     // 4) update localStorage
     this._setLocalStorage();
+  }
+
+  _deleteAllWorkouts() {
+    const ok = confirm("Delete all workouts? This action cannot be undone.");
+    if (!ok) return;
+
+    this.reset();
   }
 }
 
