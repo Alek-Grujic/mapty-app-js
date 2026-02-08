@@ -329,10 +329,11 @@ class App {
 
     if (!data) return;
 
-    this.#workouts = data;
+    this.#workouts = data.map((obj) => this._rebuildWorkout(obj));
 
-    // render list items
-    this.#workouts.forEach((work) => this._renderWorkout(work));
+    // render list items (sidebar)
+    this._rerenderWorkoutsList(this.#workouts);
+    console.log(this.#workouts[0].constructor.name);
   }
 
   reset() {
@@ -570,6 +571,28 @@ class App {
     // ako JESTE sortirano → vrati originalni redoslijed (vrijeme kreiranja)
     this._rerenderWorkoutsList(this.#workouts);
     this.#sortedByDistance = false;
+  }
+
+  _rebuildWorkout(obj) {
+    const { coords, distance, duration } = obj;
+    let workout;
+
+    if (obj.type === "running") {
+      workout = new Running(coords, distance, duration, obj.cadence);
+    }
+
+    if (obj.type === "cycling") {
+      workout = new Cycling(coords, distance, duration, obj.elevationGain);
+    }
+
+    // restore original meta (id/date)
+    workout.id = obj.id;
+    workout.date = new Date(obj.date);
+
+    // ensure description matches restored date/type
+    workout._setDescription();
+
+    return workout;
   }
 }
 
