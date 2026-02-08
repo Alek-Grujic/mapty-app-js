@@ -9,6 +9,7 @@ const inputCadence = document.querySelector(".form__input--cadence");
 const inputElevation = document.querySelector(".form__input--elevation");
 
 const btnDeleteAll = document.querySelector(".options__delete-all");
+const btnSort = document.querySelector(".options__sort");
 
 class Workout {
   date = new Date();
@@ -81,6 +82,8 @@ class App {
   #workouts = [];
   #editingId = null;
   #markers = new Map();
+  #sortAsc = true;
+  #sortedByDistance = false;
 
   constructor() {
     // get data from localStorge
@@ -97,6 +100,7 @@ class App {
     );
     document.addEventListener("keydown", this._cancelEdit.bind(this));
     btnDeleteAll.addEventListener("click", this._deleteAllWorkouts.bind(this));
+    btnSort.addEventListener("click", this._sortWorkouts.bind(this));
   }
 
   _getPosition() {
@@ -459,12 +463,12 @@ class App {
     this.#editingId = null;
   }
 
-  _rerenderWorkoutsList() {
+  _rerenderWorkoutsList(workouts = this.#workouts) {
     // obriši sve li osim forme (forma je u listi)
     const items = containerWorkouts.querySelectorAll(".workout");
     items.forEach((el) => el.remove());
 
-    this.#workouts.forEach((w) => this._renderWorkout(w));
+    workouts.forEach((w) => this._renderWorkout(w));
   }
 
   _hideFormAndClear() {
@@ -549,6 +553,23 @@ class App {
     if (!ok) return;
 
     this.reset();
+  }
+
+  _sortWorkouts() {
+    // ako trenutno NIJE sortirano → prikaži distance DESC
+    if (!this.#sortedByDistance) {
+      const sorted = this.#workouts
+        .slice()
+        .sort((a, b) => a.distance - b.distance);
+
+      this._rerenderWorkoutsList(sorted);
+      this.#sortedByDistance = true;
+      return;
+    }
+
+    // ako JESTE sortirano → vrati originalni redoslijed (vrijeme kreiranja)
+    this._rerenderWorkoutsList(this.#workouts);
+    this.#sortedByDistance = false;
   }
 }
 
