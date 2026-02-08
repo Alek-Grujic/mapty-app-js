@@ -52,7 +52,81 @@ a:visited {
 .logo {
   height: 5.2rem;
   align-self: center;
+  /* margin-bottom: 4rem; */
+}
+
+.options {
+  position: relative;
+}
+
+.options__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+
+  background-color: #aaaaaa4d;
+  border-radius: 5px;
+  padding: 1rem;
+
+  display: flex;
+  flex-direction: column;
+
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-5px);
+  transition: all 0.2s ease;
+}
+
+.options:hover .options__menu {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.options__item {
+  background: none;
+  border: 0;
+  color: var(--color-light--2);
+  padding: 0.8rem 1.5rem;
+  text-align: left;
+  cursor: pointer;
+  font-size: 1.3rem;
+}
+
+.options__item:hover {
+  background-color: var(--color-dark--1);
+}
+
+.options__delete-all {
+  color: #ff6b6b;
+}
+
+.options__btn {
+  background-color: #00c46900;
+  border: 0;
+  cursor: pointer;
+}
+
+.logo__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 4rem;
+}
+
+.options__delete-all,
+.options__sort {
+  font-size: 1.3rem;
+  border: 1px solid var(--color-light--2);
+  border-radius: 5px;
+  background-color: #2d3439;
+  color: var(--color-light--2);
+  width: 80px;
+  padding: 4px 5px;
+  cursor: pointer;
+  display: block;
+  margin: 5px;
+  text-align: center;
 }
 
 .workouts {
