@@ -83,8 +83,11 @@ class App {
   #workouts = [];
   #editingId = null;
   #markers = new Map();
-  #sortAsc = true;
   #sortedByDistance = false;
+  #tempCoords = [];
+  #tempLine = null;
+  #polylines = new Map();
+  #isDrawing = false;
 
   constructor() {
     // get data from localStorge
@@ -139,14 +142,38 @@ class App {
 
     // render markers for stored workouts (after map exists)
     this.#workouts.forEach((work) => this.renderWorkoutMarker(work));
+    this.#workouts.forEach((work) => this._renderWorkoutPath(work));
 
     this._showAllWorkouts();
   }
 
   _showForm(mapE) {
-    this.#mapEvent = mapE;
-    form.classList.remove(`hidden`);
-    inputDistance.focus();
+    const { lat, lng } = mapE.latlng;
+
+    // START NEW ROUTE
+    if (!this.#isDrawing) {
+      this._resetDraftRoute();
+      this.#isDrawing = true;
+      this.#mapEvent = mapE;
+
+      // start coords
+      this.#tempCoords = [[lat, lng]];
+
+      form.classList.remove("hidden");
+      inputDistance.focus();
+      return;
+    }
+
+    // EXTEND EXISTING ROUTE
+    this.#tempCoords.push([lat, lng]);
+
+    if (!this.#tempLine) {
+      this.#tempLine = L.polyline(this.#tempCoords, {
+        className: `route-preview ${inputType.value}-route`,
+      }).addTo(this.#map);
+    } else {
+      this.#tempLine.setLatLngs(this.#tempCoords);
+    }
   }
 
   _hideForm() {
@@ -231,7 +258,7 @@ class App {
     if (existing) this.#map.removeLayer(existing);
 
     // Create and store marker
-    const marker = L.marker(workout.coords)
+    const marker = L.marker(workout.coords[0])
       .addTo(this.#map)
       .bindPopup(
         L.popup({
@@ -318,7 +345,7 @@ class App {
 
     if (!workout) return;
 
-    this.#map.setView(workout.coords, 13, {
+    this.#map.setView(workout.coords[0], 13, {
       animate: true,
       pan: { duration: 1 },
     });
@@ -337,7 +364,7 @@ class App {
 
     // render list items (sidebar)
     this._rerenderWorkoutsList(this.#workouts);
-    console.log(this.#workouts[0].constructor.name);
+    // console.log(this.#workouts[0].constructor.name);
   }
 
   reset() {
@@ -408,19 +435,19 @@ class App {
 
   _createWorkout(type, distance, duration) {
     // ⛔ samo create koristi map click
-    if (!this.#mapEvent) return;
+    if (!this.#tempCoords.length) return;
 
-    const { lat, lng } = this.#mapEvent.latlng;
+    // const { lat, lng } = this.#mapEvent.latlng;
     let workout;
 
     if (type === "running") {
       const cadence = +inputCadence.value;
-      workout = new Running([lat, lng], distance, duration, cadence);
+      workout = new Running(this.#tempCoords, distance, duration, cadence);
     }
 
     if (type === "cycling") {
       const elevation = +inputElevation.value;
-      workout = new Cycling([lat, lng], distance, duration, elevation);
+      workout = new Cycling(this.#tempCoords, distance, duration, elevation);
     }
 
     // store
@@ -429,9 +456,17 @@ class App {
     // render
     this.renderWorkoutMarker(workout);
     this._renderWorkout(workout);
+    this._renderWorkoutPath(workout);
+    this._resetDraftRoute();
+
+    // this.#tempCoords = [];
+    // if (this.#tempLine) {
+    //   this.#map.removeLayer(this.#tempLine);
+    //   this.#tempLine = null;
+    // }
 
     // reset map click (optional but clean)
-    this.#mapEvent = null;
+    // this.#mapEvent = null;
   }
 
   _updateWorkout(type, distance, duration) {
@@ -463,6 +498,8 @@ class App {
 
     // update sidebar: najlakše je rerender cijelu listu (za sada)
     this._rerenderWorkoutsList();
+
+    this._resetDraftRoute();
 
     // exit edit mode
     this.#editingId = null;
@@ -521,6 +558,7 @@ class App {
 
     // hide form + clear inputs + remove highlight
     this._hideFormAndClear();
+    this._resetDraftRoute();
   }
 
   _deleteWorkout(e) {
@@ -546,10 +584,17 @@ class App {
       this.#markers.delete(id);
     }
 
-    // 3) ukloni element iz DOM-a
+    // 3) ukloni polyline
+    const line = this.#polylines.get(id);
+    if (line) {
+      this.#map.removeLayer(line);
+      this.#polylines.delete(id);
+    }
+
+    // 4) ukloni element iz DOM-a
     workoutEl.remove();
 
-    // 4) update localStorage
+    // 5) update localStorage
     this._setLocalStorage();
   }
 
@@ -602,12 +647,36 @@ class App {
   _showAllWorkouts() {
     if (!this.#workouts.length) return;
 
-    const bounds = L.latLngBounds(this.#workouts.map((w) => w.coords));
+    const allPoints = this.#workouts.flatMap((w) => w.coords);
+    const bounds = L.latLngBounds(allPoints);
 
     this.#map.fitBounds(bounds, {
       padding: [50, 50],
       animate: true,
     });
+  }
+
+  _renderWorkoutPath(workout) {
+    const existing = this.#polylines.get(workout.id);
+    if (existing) this.#map.removeLayer(existing);
+
+    const line = L.polyline(workout.coords, {
+      className: `${workout.type}-route`,
+    }).addTo(this.#map);
+
+    this.#polylines.set(workout.id, line);
+  }
+
+  _resetDraftRoute() {
+    this.#tempCoords = [];
+
+    if (this.#tempLine) {
+      this.#map.removeLayer(this.#tempLine);
+      this.#tempLine = null;
+    }
+
+    this.#mapEvent = null;
+    this.#isDrawing = false;
   }
 }
 

@@ -344,3 +344,20 @@ a:visited {
 .cycling-popup .leaflet-popup-content-wrapper {
   border-left: 5px solid var(--color-brand--1);
 }
+
+/* workout path */
+
+.running-route {
+  stroke: var(--color-brand--2);
+  stroke-width: 4;
+}
+
+.cycling-route {
+  stroke: var(--color-brand--1);
+  stroke-width: 4;
+}
+
+.route-preview {
+  stroke-dasharray: 6 6;
+  opacity: 0.8;
+}
